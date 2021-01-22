@@ -21,6 +21,8 @@ static int fpga_get_op(char *opstr);
 enum {
 	FPGA_NONE = -1,
 	FPGA_INFO,
+	FPGA_IDCODE,
+	FPGA_IS_7020,
 	FPGA_LOAD,
 	FPGA_LOADB,
 	FPGA_DUMP,
@@ -206,6 +208,17 @@ int do_fpga(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		rc = fpga_info(dev);
 		break;
 
+	case FPGA_IDCODE:
+		rc = fpga_idcode(dev);
+		break;
+
+	case FPGA_IS_7020:
+		rc = 0; // false
+		if ( fpga_is_7020(dev) ) {
+			rc = 1; // true
+		}
+		break;
+
 	case FPGA_LOAD:
 		rc = fpga_load(dev, fpga_data, data_size, BIT_FULL);
 		break;
@@ -336,6 +349,9 @@ int do_fpga(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		printf("Unknown operation\n");
 		return CMD_RET_USAGE;
 	}
+
+	printf("FPGA rc = 0x%08X\r\n", rc);
+
 	return rc;
 }
 
@@ -349,6 +365,10 @@ static int fpga_get_op(char *opstr)
 
 	if (!strcmp("info", opstr))
 		op = FPGA_INFO;
+	else if (!strcmp("idcode", opstr))
+		op = FPGA_IDCODE;
+	else if (!strcmp("is7020", opstr))
+		op = FPGA_IS_7020;
 	else if (!strcmp("loadb", opstr))
 		op = FPGA_LOADB;
 	else if (!strcmp("load", opstr))

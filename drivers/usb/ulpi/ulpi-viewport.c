@@ -38,6 +38,7 @@ static int ulpi_wait(struct ulpi_viewport *ulpi_vp, u32 mask)
 
 	/* Wait for the bits in mask to become zero. */
 	while (--timeout) {
+		printk(KERN_ALERT "%s : %d : readl() address = 0x%08X, value = 0x%08X\n",__FUNCTION__,__LINE__,ulpi_vp->viewport_addr, readl(ulpi_vp->viewport_addr));
 		if ((readl(ulpi_vp->viewport_addr) & mask) == 0)
 			return 0;
 
@@ -56,8 +57,10 @@ static int ulpi_wakeup(struct ulpi_viewport *ulpi_vp)
 {
 	int err;
 
-	if (readl(ulpi_vp->viewport_addr) & ULPI_SS)
+	if (readl(ulpi_vp->viewport_addr) & ULPI_SS) {
+		printk(KERN_ALERT "%s : %d : ULPI already awake.\n",__FUNCTION__,__LINE__);
 		return 0; /* already awake */
+	}
 
 	writel(ULPI_WU, ulpi_vp->viewport_addr);
 
@@ -78,14 +81,28 @@ static int ulpi_request(struct ulpi_viewport *ulpi_vp, u32 value)
 	int err;
 
 	err = ulpi_wakeup(ulpi_vp);
-	if (err)
+	if (err) {
+		printk(KERN_ALERT "%s : %d : ulpi_wakeup() returned %i\n",__FUNCTION__,__LINE__,err);
 		return err;
+	}
+
+	printk(KERN_ALERT "%s : %d : writel() clean up write\n",__FUNCTION__,__LINE__,ulpi_vp->viewport_addr,value);
+
+	writel(0xA0000000, ulpi_vp->viewport_addr);
+	err = ulpi_wait(ulpi_vp, ULPI_RWRUN);
+	if (err) {
+		printk(KERN_ALERT "%s : %d : ulpi_wait() returned %i for clean up write\n",__FUNCTION__,__LINE__,err);
+		printf("ULPI request timed out\n");
+	}
+
+	printk(KERN_ALERT "%s : %d : writel() address = 0x%08X, value = 0x%08X\n",__FUNCTION__,__LINE__,ulpi_vp->viewport_addr,value);
 
 	writel(value, ulpi_vp->viewport_addr);
-
 	err = ulpi_wait(ulpi_vp, ULPI_RWRUN);
-	if (err)
+	if (err) {
+		printk(KERN_ALERT "%s : %d : ulpi_wait() returned %i\n",__FUNCTION__,__LINE__,err);
 		printf("ULPI request timed out\n");
+	}
 
 	return err;
 }
@@ -95,6 +112,8 @@ int ulpi_write(struct ulpi_viewport *ulpi_vp, u8 *reg, u32 value)
 	u32 addr = (uintptr_t)reg & 0xFF;
 	u32 val = ULPI_RWRUN | ULPI_RWCTRL | addr << 16 | (value & 0xff);
 
+	printk(KERN_ALERT "%s : %d : reg 0x%08x = 0x%08x\n",__FUNCTION__,__LINE__,addr, (value & 0xFF));
+
 	val |= (ulpi_vp->port_num & 0x7) << 24;
 	return ulpi_request(ulpi_vp, val);
 }
@@ -103,6 +122,8 @@ u32 ulpi_read(struct ulpi_viewport *ulpi_vp, u8 *reg)
 {
 	int err;
 	u32 val = ULPI_RWRUN | ((uintptr_t)reg & 0xFF) << 16;
+
+	printk(KERN_ALERT "%s : %d : reg = 0x%08x, val = 0x%08x\n",__FUNCTION__,__LINE__,(uintptr_t)reg, val);
 
 	val |= (ulpi_vp->port_num & 0x7) << 24;
 	err = ulpi_request(ulpi_vp, val);

@@ -59,8 +59,10 @@ int ulpi_init(struct ulpi_viewport *ulpi_vp)
 	/* Assemble ID from four ULPI ID registers (8 bits each). */
 	for (i = 0; i < ULPI_ID_REGS_COUNT; i++) {
 		val = ulpi_read(ulpi_vp, reg - i);
-		if (val == ULPI_ERROR)
+		if (val == ULPI_ERROR) {
+			printk(KERN_ALERT "%s : %d : ulpi_read() returned %i\n",__FUNCTION__,__LINE__,val);
 			return val;
+		}
 
 		id = (id << 8) | val;
 	}

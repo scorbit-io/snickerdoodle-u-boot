@@ -51,11 +51,15 @@ static int ehci_zynq_probe(struct udevice *dev)
 	ulpi_vp.viewport_addr = (u32)&priv->ehci->ulpi_viewpoint;
 	ulpi_vp.port_num = 0;
 
+	printk(KERN_ALERT "%s : %d : ehci_zynq_probe() calling ulpi_init()\n",__FUNCTION__,__LINE__);
+
 	ret = ulpi_init(&ulpi_vp);
 	if (ret) {
 		puts("zynq ULPI viewport init failed\n");
 		return -1;
 	}
+
+	printk(KERN_ALERT "%s : %d : ehci_zynq_probe() successfully returned from ulpi_init()\n",__FUNCTION__,__LINE__);
 
 	/* ULPI set flags */
 	ulpi_write(&ulpi_vp, &ulpi->otg_ctrl,

@@ -352,3 +352,48 @@ int fpga_info(int devnum)
 
 	return fpga_dev_info(devnum);
 }
+
+int fpga_idcode(int devnum)
+{
+	if (devnum == FPGA_INVALID_DEVICE) {
+		if (next_desc > 0) {
+			int dev;
+
+			for (dev = 0; dev < next_desc; dev++)
+				fpga_dev_info(dev);
+
+			return FPGA_SUCCESS;
+		} else {
+			printf("%s: No FPGA devices available.\n", __func__);
+			return FPGA_FAIL;
+		}
+	}
+
+	int idcode = zynq_slcr_get_idcode();
+
+	printf("FPGA ID Code: 0x%02X\r\n", (uint8_t)(idcode & 0x000000FF));
+
+	return idcode;
+}
+
+int fpga_is_7020(int devnum)
+{
+	if (devnum == FPGA_INVALID_DEVICE) {
+		if (next_desc > 0) {
+			int dev;
+
+			for (dev = 0; dev < next_desc; dev++)
+				fpga_dev_info(dev);
+
+			return FPGA_SUCCESS;
+		} else {
+			printf("%s: No FPGA devices available.\n", __func__);
+			return FPGA_FAIL;
+		}
+	}
+
+	int idcode = zynq_slcr_get_idcode();
+
+	// magic number for 7020
+	return idcode == 0x7;
+}
